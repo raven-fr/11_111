@@ -12,7 +12,7 @@ end
 
 local function view_transform()
 	local scale = view_scale()
-	local trans = love.math.newTransform(0, 0, 1/scale, 1/scale)
+	local trans = love.math.newTransform(0, 0, 0, 1/scale, 1/scale)
 	trans:translate(cam.x, cam.y)
 	return trans
 end
