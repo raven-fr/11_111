@@ -13,7 +13,10 @@ local cam = {
 }
 
 for i = 1, 100 do
-	obj.new("test", {math.random(1000), math.random(1000)})
+	obj.new("test", {math.random() * 1000, math.random() * 1000}, {
+		avel = math.random() * 0.5 - 0.25,
+		vel = {math.random() * 0.5 - 0.25, math.random() * 0.5 - 0.25}
+	})
 end
 
 local function view_scale()

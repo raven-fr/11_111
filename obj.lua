@@ -1,8 +1,10 @@
 local world = require "world"
+local pi = math.pi
 
 local obj = {}
 
 local types = {}
+
 function obj.load_types()
 	for _, f in ipairs(love.filesystem.getDirectoryItems "objects") do
 		local ts = assert(love.filesystem.load("objects/"..f))()
@@ -12,10 +14,11 @@ function obj.load_types()
 	end
 end
  
-function obj.new(type, pos, ...)
+function obj.new(type, pos, data, ...)
 	world.last_id = world.last_id + 1
 	local o = setmetatable(
-		{id = world.last_id, data = {pos = pos}, type = type}, obj)
+		{id = world.last_id, data = data or {}, type = type}, obj)
+	o.data.pos = pos
 	o:init(...)
 	return o
 end
@@ -51,6 +54,14 @@ function obj:tick(...)
 		chunk.objects[self.id] = self
 		self.chunk = chunk
 	end
+	if self.data.vel then
+		local vx, vy = unpack(self.data.vel)
+		self.data.pos[1] = self.data.pos[1] + vx
+		self.data.pos[2] = self.data.pos[2] + vy
+	end
+	if self.data.avel then
+		self.data.angle = (self.data.angle or 0) + self.data.avel / pi
+	end
 	return self:overload("tick", ...)
 end
 
@@ -70,10 +81,10 @@ function obj:init(...)
 	return self:overload("init", ...)
 end
 
-function obj:unload()
+function obj:remove()
 	self.chunk.objects[self.id] = nil
 	world.objects[self.id] = nil
-	return self:overload "unload"
+	return self:overload "remove"
 end
 
 return obj
