@@ -3,6 +3,7 @@ local pi = math.pi
 
 local obj = {}
 
+obj.max_size = 20
 local types = {}
 
 function obj.load_types()
@@ -48,12 +49,6 @@ function obj:overload(m, ...)
 end
 
 function obj:tick(...)
-	local chunk = world.chunk(unpack(self.data.pos))
-	if chunk ~= self.chunk then
-		self.chunk.objects[self.id] = nil
-		chunk.objects[self.id] = self
-		self.chunk = chunk
-	end
 	if self.data.vel then
 		local vx, vy = unpack(self.data.vel)
 		self.data.pos[1] = self.data.pos[1] + vx
@@ -62,7 +57,13 @@ function obj:tick(...)
 	if self.data.avel then
 		self.data.angle = (self.data.angle or 0) + self.data.avel / pi
 	end
-	return self:overload("tick", ...)
+	self:overload("tick", ...)
+	local chunk = world.chunk(unpack(self.data.pos))
+	if chunk ~= self.chunk then
+		self.chunk.objects[self.id] = nil
+		chunk.objects[self.id] = self
+		self.chunk = chunk
+	end
 end
 
 function obj:draw(...)
@@ -77,6 +78,7 @@ end
 
 function obj:init(...)
 	self.chunk = world.chunk(unpack(self.data.pos))
+	self.chunk.objects[self.id] = self
 	world.objects[self.id] = self
 	return self:overload("init", ...)
 end
