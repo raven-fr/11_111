@@ -43,7 +43,7 @@ function world.all()
 	end)
 end
 
-function world.iterate(x1, y1, x2, y2)
+function world.in_box(x1, y1, x2, y2)
 	return coroutine.wrap(function()
 		for x = x1, x2 + world.chunk_size, world.chunk_size do
 			for y = y1, y2 + world.chunk_size, world.chunk_size do

@@ -29,7 +29,6 @@ function obj.load(id, data)
 	o:init()
 	return o
 end
-
 function obj.is_obj(v)
 	return getmetatable(v) == obj
 end
@@ -48,6 +47,13 @@ function obj:overload(m, ...)
 	end
 end
 
+function obj:init(...)
+	self.chunk = world.chunk(unpack(self.data.pos))
+	self.chunk.objects[self.id] = self
+	world.objects[self.id] = self
+	return self:overload("init", ...)
+end
+
 function obj:tick(...)
 	if self.data.vel then
 		local vx, vy = unpack(self.data.vel)
@@ -57,7 +63,32 @@ function obj:tick(...)
 	if self.data.avel then
 		self.data.angle = (self.data.angle or 0) + self.data.avel / pi
 	end
+
+	if self.hitbox then
+		local x, y = unpack(self.data.pos)
+		for o in world.in_box(
+				x - obj.max_size, y - obj.max_size,
+				x + obj.max_size, y + obj.max_size) do
+			if o.hitbox and o ~= self then
+				local dist = o.hitbox + self.hitbox
+				local ox, oy = unpack(o.data.pos)
+				local dx, dy = ox - x, oy - y
+				if dx*dx + dy*dy < dist*dist then
+					local angle = math.atan2(dy, dx)
+					-- reposition self outside of collided object
+					self.data.pos[1] =
+						self.data.pos[1] - math.cos(angle) * dist + dx
+					self.data.pos[2] =
+						self.data.pos[2] - math.sin(angle) * dist + dy
+					self:collision(o, angle)
+					o:collision(self, pi - angle)
+				end
+			end
+		end
+	end
+
 	self:overload("tick", ...)
+
 	local chunk = world.chunk(unpack(self.data.pos))
 	if chunk ~= self.chunk then
 		self.chunk.objects[self.id] = nil
@@ -76,11 +107,8 @@ function obj:draw(...)
 	love.graphics.pop()
 end
 
-function obj:init(...)
-	self.chunk = world.chunk(unpack(self.data.pos))
-	self.chunk.objects[self.id] = self
-	world.objects[self.id] = self
-	return self:overload("init", ...)
+function obj:collision(collided)
+	return self:overload("collision", collided)
 end
 
 function obj:remove()

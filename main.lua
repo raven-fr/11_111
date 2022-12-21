@@ -68,7 +68,9 @@ function love.draw()
 		end
 	end
 	-- draw all possibly visible objects
-	for o in world.iterate(cx1 - 20, cy1 - 20, cx2 + 20, cy2 + 20) do
+	for o in world.in_box(
+			cx1 - obj.max_size, cy1 - obj.max_size,
+			cx2 + obj.max_size, cy2 + obj.max_size) do
 		set_color(1, 1, 1)
 		o:draw()
 	end

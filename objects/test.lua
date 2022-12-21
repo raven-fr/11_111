@@ -1,4 +1,4 @@
-local test = {radius = 4}
+local test = {hitbox = 4}
 
 function test:draw()
 	line(-4, 4, 0, -4, 4, 4, -4, 4)
