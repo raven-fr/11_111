@@ -51,18 +51,17 @@ function obj:init(...)
 	self.chunk = world.chunk(unpack(self.data.pos))
 	self.chunk.objects[self.id] = self
 	world.objects[self.id] = self
+	self.data.vel = self.data.vel or {0, 0}
+	self.data.avel = self.data.avel or 0
 	return self:overload("init", ...)
 end
 
 function obj:tick(...)
-	if self.data.vel then
-		local vx, vy = unpack(self.data.vel)
-		self.data.pos[1] = self.data.pos[1] + vx
-		self.data.pos[2] = self.data.pos[2] + vy
-	end
-	if self.data.avel then
-		self.data.angle = (self.data.angle or 0) + self.data.avel / pi
-	end
+	local vx, vy = unpack(self.data.vel)
+	self.data.pos[1] = self.data.pos[1] + vx
+	self.data.pos[2] = self.data.pos[2] + vy
+
+	self.data.angle = (self.data.angle or 0) + self.data.avel / pi
 
 	if self.hitbox then
 		local x, y = unpack(self.data.pos)
@@ -112,6 +111,7 @@ end
 function obj:collision(collided, angle)
 	self.force = {collided.data.vel[1] * math.cos(angle),
 		collided.data.vel[2] * math.sin(angle)}
+	self.torque = -collided.data.avel
 	return self:overload("collision", collided, angle, self.force)
 end
 
@@ -120,6 +120,8 @@ function obj:collision_exit(collided, angle)
 	self.data.vel[2] = self.data.vel[2] + self.force[2]
 	collided.data.vel[1] = collided.data.vel[1] - self.force[1]
 	collided.data.vel[2] = collided.data.vel[2] - self.force[2]
+	self.data.avel = self.data.avel + self.torque
+	collided.data.avel = collided.data.avel + self.torque
 	return self:overload("collision_exit", collided, angle, self.force)
 end
 
