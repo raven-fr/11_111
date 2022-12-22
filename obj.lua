@@ -75,13 +75,15 @@ function obj:tick(...)
 				local dx, dy = ox - x, oy - y
 				if dx*dx + dy*dy < dist*dist then
 					local angle = math.atan2(dy, dx)
+					self:collision(o, angle)
+					o:collision(self, pi - angle)
 					-- reposition self outside of collided object
 					self.data.pos[1] =
 						self.data.pos[1] - math.cos(angle) * dist + dx
 					self.data.pos[2] =
 						self.data.pos[2] - math.sin(angle) * dist + dy
-					self:collision(o, angle)
-					o:collision(self, pi - angle)
+					self:collision_exit(o, angle)
+					o:collision_exit(self, pi - angle)
 				end
 			end
 		end
@@ -107,8 +109,18 @@ function obj:draw(...)
 	love.graphics.pop()
 end
 
-function obj:collision(collided)
-	return self:overload("collision", collided)
+function obj:collision(collided, angle)
+	self.force = {collided.data.vel[1] * math.cos(angle),
+		collided.data.vel[2] * math.sin(angle)}
+	return self:overload("collision", collided, angle, self.force)
+end
+
+function obj:collision_exit(collided, angle)
+	self.data.vel[1] = self.data.vel[1] + self.force[1]
+	self.data.vel[2] = self.data.vel[2] + self.force[2]
+	collided.data.vel[1] = collided.data.vel[1] - self.force[1]
+	collided.data.vel[2] = collided.data.vel[2] - self.force[2]
+	return self:overload("collision_exit", collided, angle, self.force)
 end
 
 function obj:remove()
