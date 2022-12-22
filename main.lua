@@ -1,19 +1,22 @@
-local world = require "world"
 local obj = require "obj"
 
 obj.load_types()
 line = love.graphics.line
+function box(x, y, w, h) line(x, y, x + w, y, x + w, y + h, x, y + h, x, y) end
 set_color = love.graphics.setColor
 
-line_width = 0.4
+local line_width = 0.4
 local cam = {
 	x = 0, y = 0,
 	scale = 1.1,
 	panning = false,
 }
+local dragging
+local selecting
+local selection
 
 for i = 1, 100 do
-	obj.new("test", {math.random() * 1000, math.random() * 1000}, {
+	obj.new("test", {math.random() * 1000 - 500, math.random() * 1000 - 500}, {
 		avel = math.random() * 0.5 - 0.25,
 		vel = {math.random() * 0.5 - 0.25, math.random() * 0.5 - 0.25}
 	})
@@ -50,12 +53,11 @@ local function view_transform()
 	return trans
 end
 
-function love.draw()
-	love.graphics.clear(0, 0, 0)
+local function draw_world()
 	local w, h = view_dimensions()
 	local cx1, cy1 = cam.x - w/2, cam.y - h/2
 	local cx2, cy2 = cam.x + w/2, cam.y + h/2
-
+	love.graphics.push()
 	love.graphics.applyTransform(view_transform())
 	-- the line thickness will scale according to the zoom amount. counteract this.
 	love.graphics.setLineWidth(line_width / cam.scale)
@@ -63,43 +65,83 @@ function love.draw()
 	set_color(0.1, 0.1, 0.1)
 	for x = cx1 - cx1%64, cx2, 64 do
 		for y = cy1 - cy1%64, cy2, 64 do
-			line(x, y, x + world.chunk_size, y)
-			line(x, y, x, y + world.chunk_size)
+			line(x, y, x + 64, y)
+			line(x, y, x, y + 64)
 		end
 	end
 	-- draw all possibly visible objects
-	for o in world.in_box(
+	for o in obj.in_box(
 			cx1 - obj.max_size, cy1 - obj.max_size,
 			cx2 + obj.max_size, cy2 + obj.max_size) do
 		set_color(1, 1, 1)
 		o:draw()
 	end
-	love.graphics.origin()
+	if selection then
+		set_color(1, 1, 0.5)
+		for o in pairs(selection) do
+			local x, y = unpack(o.data.pos)
+			box(x - o.hitbox, y - o.hitbox, o.hitbox*2, o.hitbox*2)
+		end
+	end
+	love.graphics.pop()
+end
 
+local function draw_hud()
+	love.graphics.push()
 	love.graphics.applyTransform(window_transform())
 	love.graphics.setLineWidth(line_width)
-	set_color(1, 1, 1)
+	-- things
+	love.graphics.pop()
+end
+
+function love.draw()
+	love.graphics.clear(0, 0, 0)
+	draw_world()
+	draw_hud()
 end
 
 function love.update()
-	for _, o in pairs(world.objects) do
-		o:tick()
+	if not (selection or dragging) then
+		for o in obj.all() do
+			o:tick()
+		end
 	end
 end
 
-function love.mousepressed(_, _, button)
-	if button == 2 then
+function love.mousepressed(x, y, button)
+	local x, y = view_transform():inverseTransformPoint(x, y)
+	if button == 1 then
+	elseif button == 2 then
 		cam.panning = true
 	end
 end
 
-function love.mousereleased(_, _, button)
-	if button == 2 then
+function love.mousereleased(x, y, button)
+	local x, y = view_transform():inverseTransformPoint(x, y)
+	if button == 1 then
+		if not dragging then
+			local clicked = obj.at(x, y)()
+			if not love.keyboard.isDown "lshift" then
+				if clicked and not (selection and selection[clicked]) then
+					selection = {[clicked] = true}
+				else
+					selection = nil
+				end
+			elseif clicked then
+				selection = selection or {}
+				selection[clicked] = true
+			end
+		else
+			selecting = nil
+		end
+		dragging = nil
+	elseif button == 2 then
 		cam.panning = false
 	end
 end
 
-function love.mousemoved(_, _, dx, dy)
+function love.mousemoved(x, y, dx, dy)
+	local x, y = view_transform():inverseTransformPoint(x, y)
 	if cam.panning then
 		local scale = view_scale()
 		dx, dy = dx * scale, dy * scale

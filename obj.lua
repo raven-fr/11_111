@@ -29,8 +29,48 @@ function obj.load(id, data)
 	o:init()
 	return o
 end
+
+function obj.get(id)
+	return world.objects[id]
+end
+
 function obj.is_obj(v)
 	return getmetatable(v) == obj
+end
+
+function obj.in_box(x1, y1, x2, y2)
+	return coroutine.wrap(function()
+		for x = x1, x2 + world.chunk_size, world.chunk_size do
+			for y = y1, y2 + world.chunk_size, world.chunk_size do
+				for _, o in pairs(world.chunk(x, y).objects) do
+					local x, y = unpack(o.data.pos)
+					if x >= x1 and x <= x2 and y >= y1 and y <= y2 then
+						coroutine.yield(o)
+					end
+				end
+			end
+		end
+	end)
+end
+
+function obj.at(x, y)
+	return coroutine.wrap(function()
+		for o in obj.in_box(
+				x - obj.max_size, y - obj.max_size,
+				x + obj.max_size, y + obj.max_size) do
+			if o:in_hitbox(x, y) then
+				coroutine.yield(o)
+			end
+		end
+	end)
+end
+
+function obj.all()
+	return coroutine.wrap(function()
+		for _, o in pairs(world.objects) do
+			coroutine.yield(o)
+		end
+	end)
 end
 
 function obj:__index(v)
@@ -65,7 +105,7 @@ function obj:tick(...)
 
 	if self.hitbox then
 		local x, y = unpack(self.data.pos)
-		for o in world.in_box(
+		for o in obj.in_box(
 				x - obj.max_size, y - obj.max_size,
 				x + obj.max_size, y + obj.max_size) do
 			if o.hitbox and o ~= self then
@@ -123,6 +163,12 @@ function obj:collision_exit(collided, angle)
 	self.data.avel = self.data.avel + self.torque
 	collided.data.avel = collided.data.avel + self.torque
 	return self:overload("collision_exit", collided, angle, self.force)
+end
+
+function obj:in_hitbox(px, py)
+	local x, y = unpack(self.data.pos)
+	local dx, dy = x - px, y - py
+	return dx*dx + dy*dy < self.hitbox*self.hitbox
 end
 
 function obj:remove()

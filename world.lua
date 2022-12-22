@@ -31,31 +31,4 @@ function world.chunk(x, y)
 	return world.chunks[cx][cy]
 end
 
-function world.object(id)
-	return world.objects[id]
-end
-
-function world.all()
-	return coroutine.wrap(function()
-		for _, o in pairs(world.objects) do
-			coroutine.yield(o)
-		end
-	end)
-end
-
-function world.in_box(x1, y1, x2, y2)
-	return coroutine.wrap(function()
-		for x = x1, x2 + world.chunk_size, world.chunk_size do
-			for y = y1, y2 + world.chunk_size, world.chunk_size do
-				for _, o in pairs(world.chunk(x, y).objects) do
-					local x, y = unpack(o.data.pos)
-					if x >= x1 and x <= x2 and y >= y1 and y <= y2 then
-						coroutine.yield(o)
-					end
-				end
-			end
-		end
-	end)
-end
-
 return world
