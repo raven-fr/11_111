@@ -108,7 +108,7 @@ function love.draw()
 end
 
 function love.update()
-	if not (selection or dragging) then
+	if not (selection or selecting) then
 		for o in obj.all() do
 			o:tick()
 		end
@@ -155,7 +155,7 @@ function love.mousemoved(x, y, dx, dy)
 	if drag_start then
 		if not dragging then
 			local clicked = obj.at(x, y)()
-			selecting = not clicked
+			selecting = not clicked and not love.keyboard.isDown "lshift"
 		end
 		if selecting then
 			local sx, sy = unpack(drag_start)
