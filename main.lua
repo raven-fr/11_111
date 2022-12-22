@@ -11,6 +11,7 @@ local cam = {
 	scale = 1.1,
 	panning = false,
 }
+local drag_start
 local dragging
 local selecting
 local selection
@@ -76,12 +77,18 @@ local function draw_world()
 		set_color(1, 1, 1)
 		o:draw()
 	end
+	set_color(1, 1, 0.5)
 	if selection then
-		set_color(1, 1, 0.5)
 		for o in pairs(selection) do
 			local x, y = unpack(o.data.pos)
 			box(x - o.hitbox, y - o.hitbox, o.hitbox*2, o.hitbox*2)
 		end
+	end
+	if selecting then
+		local x1, y1 = unpack(selecting.p1)
+		local x2, y2 = unpack(selecting.p2)
+		local w, h = x2 - x1, y2 - y1
+		box(x1, y1, w, h)
 	end
 	love.graphics.pop()
 end
@@ -111,6 +118,7 @@ end
 function love.mousepressed(x, y, button)
 	local x, y = view_transform():inverseTransformPoint(x, y)
 	if button == 1 then
+		drag_start = {x, y}
 	elseif button == 2 then
 		cam.panning = true
 	end
@@ -131,10 +139,10 @@ function love.mousereleased(x, y, button)
 				selection = selection or {}
 				selection[clicked] = true
 			end
-		else
-			selecting = nil
 		end
-		dragging = nil
+		dragging = false
+		drag_start = nil
+		selecting = nil
 	elseif button == 2 then
 		cam.panning = false
 	end
@@ -142,9 +150,33 @@ end
 
 function love.mousemoved(x, y, dx, dy)
 	local x, y = view_transform():inverseTransformPoint(x, y)
-	if cam.panning then
-		local scale = view_scale()
-		dx, dy = dx * scale, dy * scale
+	local scale = view_scale()
+	dx, dy = dx * scale, dy * scale
+	if drag_start then
+		if not dragging then
+			local clicked = obj.at(x, y)()
+			selecting = not clicked
+		end
+		if selecting then
+			local sx, sy = unpack(drag_start)
+			selecting = {
+				p1 = {math.min(x, sx), math.min(y, sy)},
+				p2 = {math.max(x, sx), math.max(y, sy)},
+			}
+			selection = {}
+			for o in obj.in_box(
+					selecting.p1[1], selecting.p1[2],
+					selecting.p2[1], selecting.p2[2]) do
+				selection[o] = true
+			end
+			if not next(selection) then selection = nil end
+		elseif selection then
+			for o in pairs(selection) do
+				o:set_pos(o.data.pos[1] + dx, o.data.pos[2] + dy)
+			end
+		end
+		dragging = true
+	elseif cam.panning then
 		cam.x = cam.x - dx
 		cam.y = cam.y - dy
 	end

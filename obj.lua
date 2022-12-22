@@ -96,11 +96,20 @@ function obj:init(...)
 	return self:overload("init", ...)
 end
 
+function obj:set_pos(x, y)
+	self.data.pos[1] = x
+	self.data.pos[2] = y
+	local chunk = world.chunk(unpack(self.data.pos))
+	if chunk ~= self.chunk then
+		self.chunk.objects[self.id] = nil
+		chunk.objects[self.id] = self
+		self.chunk = chunk
+	end
+end
+
 function obj:tick(...)
 	local vx, vy = unpack(self.data.vel)
-	self.data.pos[1] = self.data.pos[1] + vx
-	self.data.pos[2] = self.data.pos[2] + vy
-
+	self:set_pos(self.data.pos[1] + vx, self.data.pos[2] + vy)
 	self.data.angle = (self.data.angle or 0) + self.data.avel / pi
 
 	if self.hitbox then
@@ -117,10 +126,9 @@ function obj:tick(...)
 					self:collision(o, angle)
 					o:collision(self, pi - angle)
 					-- reposition self outside of collided object
-					self.data.pos[1] =
-						self.data.pos[1] - math.cos(angle) * dist + dx
-					self.data.pos[2] =
-						self.data.pos[2] - math.sin(angle) * dist + dy
+					self:set_pos(
+						self.data.pos[1] - math.cos(angle) * dist + dx,
+						self.data.pos[2] - math.sin(angle) * dist + dy)
 					self:collision_exit(o, angle)
 					o:collision_exit(self, pi - angle)
 				end
@@ -129,13 +137,6 @@ function obj:tick(...)
 	end
 
 	self:overload("tick", ...)
-
-	local chunk = world.chunk(unpack(self.data.pos))
-	if chunk ~= self.chunk then
-		self.chunk.objects[self.id] = nil
-		chunk.objects[self.id] = self
-		self.chunk = chunk
-	end
 end
 
 function obj:draw(...)
