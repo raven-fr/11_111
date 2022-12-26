@@ -27,4 +27,8 @@ function M.deepcopy(t)
 	return dc(t)
 end
 
+function M.rot(a, x, y)
+	return x*math.cos(a) - y*math.sin(a), x*math.sin(a) + y*math.cos(a)
+end
+
 return M

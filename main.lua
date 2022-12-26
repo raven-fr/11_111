@@ -19,7 +19,7 @@ local selection
 for i = 1, 100 do
 	obj.new("test", {math.random() * 1000 - 500, math.random() * 1000 - 500}, {
 		avel = math.random() * 0.5 - 0.25,
-		vel = {math.random() * 0.5 - 0.25, math.random() * 0.5 - 0.25}
+		vel = {math.random() * 1 - 0.5, math.random() * 1 - 0.5}
 	})
 end
 

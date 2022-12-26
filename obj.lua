@@ -1,4 +1,5 @@
 local world = require "world"
+local util = require "util"
 local pi = math.pi
 
 local obj = {}
@@ -122,15 +123,35 @@ function obj:tick(...)
 				local ox, oy = unpack(o.data.pos)
 				local dx, dy = ox - x, oy - y
 				if dx*dx + dy*dy < dist*dist then
+					-- local ke = self:energy() + o:energy()
+					self:collision(o)
+					o:collision(self)
+
 					local angle = math.atan2(dy, dx)
-					self:collision(o, angle)
-					o:collision(self, pi - angle)
+
 					-- reposition self outside of collided object
 					self:set_pos(
 						self.data.pos[1] - math.cos(angle) * dist + dx,
 						self.data.pos[2] - math.sin(angle) * dist + dy)
-					self:collision_exit(o, angle)
-					o:collision_exit(self, pi - angle)
+
+					local av1, av2 = self.data.avel, o.data.avel
+					-- transfer angular velocity conserving energy
+					local avel = math.sqrt((av1*av1 + av2*av2) / 2)
+					self.data.avel = avel * (av1 > av2 and 1 or -1)
+					o.data.avel = avel * (av1 > av2 and -1 or 1)
+
+					local vx, vy = unpack(self.data.vel)
+					local ovx, ovy = unpack(o.data.vel)
+					-- exchange the components of the velocities towards the
+					-- angle of collision
+					local rovx, rvy = util.rot(angle, vx, vy)
+					local rvx, rovy = util.rot(angle, ovx, ovy)
+					self.data.vel[1], self.data.vel[2] = util.rot(-angle, rvx, rvy)
+					o.data.vel[1], o.data.vel[2] = util.rot(-angle, rovx, rovy)
+
+					self:collision_exit(o)
+					o:collision_exit(self)
+					-- assert(ke - (self:energy() + o:energy()) < 0.00001)
 				end
 			end
 		end
@@ -149,21 +170,18 @@ function obj:draw(...)
 	love.graphics.pop()
 end
 
-function obj:collision(collided, angle)
-	self.force = {collided.data.vel[1] * math.cos(angle),
-		collided.data.vel[2] * math.sin(angle)}
-	self.torque = -collided.data.avel
-	return self:overload("collision", collided, angle, self.force)
+function obj:collision(...)
+	return self:overload("collision", ...)
 end
 
-function obj:collision_exit(collided, angle)
-	self.data.vel[1] = self.data.vel[1] + self.force[1]
-	self.data.vel[2] = self.data.vel[2] + self.force[2]
-	collided.data.vel[1] = collided.data.vel[1] - self.force[1]
-	collided.data.vel[2] = collided.data.vel[2] - self.force[2]
-	self.data.avel = self.data.avel + self.torque
-	collided.data.avel = collided.data.avel + self.torque
-	return self:overload("collision_exit", collided, angle, self.force)
+function obj:collision_exit(...)
+	return self:overload("collision_exit", ...)
+end
+
+function obj:energy()
+	local vx, vy = unpack(self.data.vel)
+	local avel = self.data.avel
+	return 1 + avel*avel + vx*vx + vy*vy
 end
 
 function obj:in_hitbox(px, py)
