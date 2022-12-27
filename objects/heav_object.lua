@@ -14,7 +14,7 @@ function heav_object:tick()
     local x, y = self.data.pos[1], self.data.pos[2]
     self.time = self.time+1
     local the = math.sin(self.time/5) / 30
-    for obj in obj.in_box(x-50, y-50, x+50, y+50) do
+    for obj in obj.in_circle(x, y, 50) do
         if obj ~= self then
             obj.data.avel = obj.data.avel + the
         end
