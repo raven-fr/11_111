@@ -74,6 +74,14 @@ function obj.all()
 	end)
 end
 
+function obj.total_energy()
+	local res = 0
+	for obj in obj.all() do
+		res = res + obj:energy()
+	end
+	return res
+end
+
 function obj:__index(v)
 	if obj[v] then
 		return obj[v]
