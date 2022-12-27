@@ -88,6 +88,14 @@ function love.wheelmoved(_, y)
 	end
 end
 
+function to_commands(lines)
+	local t = {}
+	for _, l in ipairs(lines) do
+		table.insert(t, "\tline("..table.concat(l, ", ")..")\n")
+	end
+	return table.concat(t)
+end
+
 function to_array(lines)
 	local t = {}
 	for _, l in ipairs(lines) do
@@ -103,6 +111,12 @@ function love.keypressed(key)
 				lines = {}
 			else
 				love.system.setClipboardText(to_array(lines))
+			end
+		elseif key == "v" then
+			local c, err = loadstring("return "..love.system.getClipboardText())
+			if c then
+				local ok, ls = pcall(c)
+				if ok then lines = ls end
 			end
 		end
 	end
