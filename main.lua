@@ -1,4 +1,5 @@
 local obj = require "obj"
+local text = require "text"
 
 obj.load_types()
 line = love.graphics.line
@@ -24,6 +25,8 @@ for i = 1, 100 do
 end
 
 obj.new("test", {0, 0})
+
+obj.new("heav_object", {100, 0})
 
 local function window_scale()
 	local w, h = love.graphics.getDimensions()
@@ -98,6 +101,8 @@ local function draw_hud()
 	love.graphics.applyTransform(window_transform())
 	love.graphics.setLineWidth(line_width)
 	-- things
+	local total_energy = obj.total_energy()
+	text.draw("total energy "..total_energy, 10, 10)
 	love.graphics.pop()
 end
 
