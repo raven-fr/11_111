@@ -101,8 +101,9 @@ local function draw_hud()
 	love.graphics.applyTransform(window_transform())
 	love.graphics.setLineWidth(line_width)
 	-- things
+	set_color(1, 1, 1)
 	local total_energy = obj.total_energy()
-	text.draw("total energy "..total_energy, 10, 10)
+	text.draw(("e: %f"):format(total_energy), 10, 10, {scale = 0.4})
 	love.graphics.pop()
 end
 
