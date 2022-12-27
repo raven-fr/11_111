@@ -54,6 +54,16 @@ function obj.in_box(x1, y1, x2, y2)
 	end)
 end
 
+function obj.in_circle(x1, y1, r)
+	return coroutine.wrap(function()
+		for o in obj.in_box(x1-r, y1-r, x1+r, y1+r) do
+			if (x1-o.data.pos[1])^2 + (y1-o.data.pos[2])^2 <= r^2 then
+				coroutine.yield(o)
+			end
+		end
+	end)
+end
+
 function obj.at(x, y)
 	return coroutine.wrap(function()
 		for o in obj.in_box(
