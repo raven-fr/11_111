@@ -202,6 +202,39 @@ function obj:energy()
 	return 1 + avel*avel + vx*vx + vy*vy
 end
 
+function obj:observe_avel(o)
+	return o.data.avel - self.data.avel
+end
+
+function obj:observe_vel(o)
+	local vx, vy = unpack(self.data.vel)
+	local ovx, ovy = unpack(o.data.vel)
+	return ovx - vx, ovy - vy
+end
+
+function obj:observe_pos(o)
+	local px, py = unpack(self.data.pos)
+	local opx, opy = unpack(o.data.pos)
+	return opx - px, opy - py
+end
+
+function obj:avel_to_accel(o, ax, ay)
+	local ovx, ovy = self:observe_vel(o)
+	local nvx, nvy = ovx + ax, ovy + ay
+	local v = util.magnitude{ovx, ovy}
+	local nv = util.magnitude{nvx, nvy}
+	local ne = v*v - nv*nv
+	local avel = self:observe_avel(o)
+	local ave = avel*avel + ne
+	if ave < 0 then
+		return false
+	end
+	local vx, vy = unpack(self.data.vel)
+	o.data.avel = self.data.avel + (math.sqrt(ave) * (avel >= 0 and 1 or -1))
+	o.data.vel = {vx + nvx, vy + nvy}
+	return true
+end
+
 function obj:in_hitbox(px, py)
 	local x, y = unpack(self.data.pos)
 	local dx, dy = x - px, y - py

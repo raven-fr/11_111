@@ -31,4 +31,12 @@ function M.rot(a, x, y)
 	return x*math.cos(a) - y*math.sin(a), x*math.sin(a) + y*math.cos(a)
 end
 
+function M.magnitude(v)
+	local s = 0
+	for _, a in ipairs(v) do
+		s = s + a*a
+	end
+	return math.sqrt(s)
+end
+
 return M
