@@ -26,7 +26,6 @@ end
 
 obj.new("test", {0, 0})
 obj.new("x", {0, 60}, {avel = 100})
-obj.new("heav_object_2", {100, 60})
 
 local function window_scale()
 	local w, h = love.graphics.getDimensions()
