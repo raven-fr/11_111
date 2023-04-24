@@ -19,7 +19,7 @@ function x_obj:tick()
 			local px, py = self:observe_pos(o)
 			local mag = util.magnitude{px, py}
 			local dx, dy = px / mag, py / mag
-			self:avel_to_accel(o, dx * mag/range, dy * mag/range)
+			self:avel_to_accel(o, dx * mag/range/10, dy * mag/range/10)
 		end
 	end
 end

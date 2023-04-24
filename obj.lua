@@ -203,7 +203,7 @@ function obj:energy()
 end
 
 function obj:observe_avel(o)
-	return o.data.avel - self.data.avel
+	return o.data.avel - util.magnitude(self.data.vel)
 end
 
 function obj:observe_vel(o)
@@ -230,7 +230,8 @@ function obj:avel_to_accel(o, ax, ay)
 		return false
 	end
 	local vx, vy = unpack(self.data.vel)
-	o.data.avel = self.data.avel + (math.sqrt(ave) * (avel >= 0 and 1 or -1))
+	o.data.avel =
+		util.magnitude{vx, vy} + (math.sqrt(ave) * (avel >= 0 and 1 or -1))
 	o.data.vel = {vx + nvx, vy + nvy}
 	return true
 end
