@@ -5,6 +5,7 @@ local pi = math.pi
 local obj = {}
 
 obj.max_size = 20
+obj.mass = 1
 local types = {}
 
 function obj.load_types()
@@ -152,11 +153,12 @@ function obj:tick(...)
 						self.data.pos[1] - math.cos(angle) * dist + dx,
 						self.data.pos[2] - math.sin(angle) * dist + dy)
 
-					local av1, av2 = self.data.avel, o.data.avel
-					-- transfer angular velocity conserving energy
-					local avel = math.sqrt((av1*av1 + av2*av2) / 2)
-					self.data.avel = avel * (av1 > av2 and 1 or -1)
-					o.data.avel = avel * (av1 > av2 and -1 or 1)
+					local av1, av2 =
+						math.abs(self.data.avel), math.abs(o.data.avel)
+					self.data.avel = ((av1 + av2) / 2) *
+						(self.data.avel >= 0 and 1 or -1)
+					o.data.avel = ((av1 + av2) / 2) *
+						(o.data.avel >= 0 and 1 or -1)
 
 					local vx, vy = unpack(self.data.vel)
 					local ovx, ovy = unpack(o.data.vel)
@@ -199,11 +201,7 @@ end
 function obj:energy()
 	local vx, vy = unpack(self.data.vel)
 	local avel = self.data.avel
-	return 1 + avel*avel + vx*vx + vy*vy
-end
-
-function obj:observe_avel(o)
-	return o.data.avel - util.magnitude(self.data.vel)
+	return self.mass + self.mass * (math.abs(avel) + vx^2 + vy^2)
 end
 
 function obj:observe_vel(o)
@@ -219,21 +217,17 @@ function obj:observe_pos(o)
 end
 
 function obj:avel_to_accel(o, ax, ay)
-	local ovx, ovy = self:observe_vel(o)
-	local nvx, nvy = ovx + ax, ovy + ay
-	local v = util.magnitude{ovx, ovy}
-	local nv = util.magnitude{nvx, nvy}
-	local ne = v*v - nv*nv
-	local avel = self:observe_avel(o)
-	local ave = avel*avel + ne
-	if ave < 0 then
-		return false
-	end
 	local vx, vy = unpack(self.data.vel)
-	o.data.avel =
-		util.magnitude{vx, vy} + (math.sqrt(ave) * (avel >= 0 and 1 or -1))
-	o.data.vel = {vx + nvx, vy + nvy}
-	return true
+	local ovx, ovy = unpack(o.data.vel)
+	local nvx, nvy = ovx + ax, ovy + ay
+	local energy = (ovx^2 + ovy^2) - (nvx^2 + nvy^2)
+	local avel = o.data.avel
+	local ave = math.abs(avel) + energy
+	if ave < 0 then
+		-- ???
+	end
+	o.data.avel = ave * (avel >= 0 and 1 or -1)
+	o.data.vel[1], o.data.vel[2] = nvx, nvy
 end
 
 function obj:in_hitbox(px, py)
